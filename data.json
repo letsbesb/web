@@ -1,0 +1,10 @@
+[
+  {
+    "name": "밍글스",
+    "category": "음식점>한식",
+    "address": "서울특별시 강남구 도산대로67길 19 힐탑빌딩 2층",
+    "lat": 37.5253845,
+    "lng": 127.0441702,
+    "icon": { "markerColor": "red", "icon": "cutlery" }
+  }
+]

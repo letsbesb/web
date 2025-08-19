@@ -1,0 +1,30 @@
+<script>
+  // 이미 map 변수가 만들어져 있다고 가정
+  fetch('data.json') // 같은 폴더면 이렇게!
+    .then(r => r.json())
+    .then(points => {
+      const latlngs = [];
+      points.forEach(p => {
+        const marker = L.marker([p.lat, p.lng]).addTo(map);
+        // AwesomeMarkers 아이콘 (없으면 기본 마커 사용)
+        if (L.AwesomeMarkers && p.icon) {
+          const icon = L.AwesomeMarkers.icon({
+            markerColor: p.icon.markerColor || 'red',
+            iconColor: 'white',
+            icon: p.icon.icon || 'cutlery',
+            prefix: 'fa',
+            extraClasses: 'fa-rotate-0'
+          });
+          marker.setIcon(icon);
+        }
+        marker.bindTooltip(
+          `<div><b>${p.name}</b><br>${p.category || ''}<br>${p.address || ''}</div>`,
+          { sticky: true }
+        );
+        latlngs.push([p.lat, p.lng]);
+      });
+      if (latlngs.length) {
+        map.fitBounds(L.latLngBounds(latlngs));
+      }
+    });
+</script>
