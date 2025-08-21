@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>아파트 지도</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+<!-- ★ 여기 추가 -->
+<button id="btnTest" style="position:absolute;z-index:1000;left:10px;top:10px;">
+  해운대 2025-08 불러오기
+</button>
+
+  <!-- Leaflet -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- (선택) AwesomeMarkers 쓰면 추가 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+
+  <script>
+    // 1) 지도 먼저 만든다
+    const map = L.map('map', { zoomControl: true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    map.setView([36.5, 127.8], 7); // 한국 대략 중앙
+
+    // 2) 데이터 불러오기 (같은 폴더면 상대경로 OK)
+    fetch('data.json?v=' + Date.now())
+      .then(r => {
+        if (!r.ok) throw new Error('data.json 불러오기 실패: ' + r.status);
+        return r.json();
+      })
+      .then(points => {
+        const latlngs = [];
+        points.forEach(p => {
+          if (typeof p.lat !== 'number' || typeof p.lng !== 'number') return;
+          const marker = L.marker([p.lat, p.lng]).addTo(map);
+
+          // (선택) AwesomeMarkers 적용
+          if (L.AwesomeMarkers && p.icon) {
+            const icon = L.AwesomeMarkers.icon({
+              markerColor: p.icon.markerColor || 'red',
+              iconColor: 'white',
+              icon: p.icon.icon || 'cutlery',
+              prefix: 'fa'
+            });
+            marker.setIcon(icon);
+          }
+
+          marker.bindTooltip(
+            `<div><b>${p.name ?? ''}</b><br>${p.category ?? ''}<br>${p.address ?? ''}</div>`,
+            { sticky: true }
+          );
+          latlngs.push([p.lat, p.lng]);
+        });
+        if (latlngs.length) map.fitBounds(L.latLngBounds(latlngs), { padding: [20,20] });
+      })
+      .catch(err => console.error(err));
+  </script>
+
+  <!-- ★ 여기 추가: 마지막 </script> 다음, </body> 바로 위 -->
+  <script>
+    async function fetchJsonSafe(url){
+      const res = await fetch(url);
+      const text = await res.text();        // 먼저 텍스트로 받기
+      if (!res.ok) throw new Error('HTTP ' + res.status + '\n' + text.slice(0,200));
+      try { return JSON.parse(text); }
+      catch { throw new Error('서버 응답이 JSON이 아님:\n' + text.slice(0,200)); }
+    }
+
+    document.getElementById('btnTest').addEventListener('click', async () => {
+      try {
+        // 해운대구 LAWD_CD = 26290
+        const data = await fetchJsonSafe('./api/trades.php?ym=202508&lawd_cd=26290');
+        alert('받은 건수: ' + (data.items?.length ?? 0));
+        console.log(data);
+      } catch (e) {
+        alert('에러: ' + e.message);
+      }
+    });
+  </script>
+</body>
+</html>
